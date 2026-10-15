@@ -87,13 +87,7 @@ export const api = new Elysia({ prefix: '/api' })
           .onBeforeHandle(({ params, session }) =>
             threadsService.assertAccess(params.id, session),
           )
-          .get('/', async ({ params, session }) => {
-            const thread = await threadsService.getById(params.id);
-            return {
-              ...thread,
-              canMutate: threadsService.canMutate(thread, session),
-            };
-          })
+          .get('/', ({ params }) => threadsService.getById(params.id))
           .patch(
             '/',
             ({ body, params }) => threadsService.update(params.id, body.title),

@@ -14,7 +14,6 @@ import { enqueueWorkItemResolve } from '#components/workflows/work-item-resolve/
 
 import { webhookAuth } from '#utils/auth.js';
 import { config, isProjectInScope, llms } from '#utils/config.js';
-import { fetchMrAuthorUsername } from '#utils/gitlab.js';
 import { parseHarnessYml, shouldReviewBranch } from '#utils/harness-config.js';
 import { logger } from '#utils/logger.js';
 import { isAutomatedStatusNote } from '#utils/notes.js';
@@ -534,16 +533,10 @@ export const webhook = new Elysia({ prefix: '/webhooks' })
       await threadsDal.update(thread.id, { archived_at: null });
     }
 
-    // The MR payload only carries author_id, not the username session.username is compared against.
-    if (!thread.metadata?.mrAuthor) {
-      await fetchMrAuthorUsername(projectPath, String(mrIid))
-        .then((mrAuthor) => threadsDal.mergeMetadata(thread.id, { mrAuthor }))
-        .catch((err) =>
-          logger.error(
-            { err, threadId: thread.id },
-            '[webhook] MR author lookup failed',
-          ),
-        );
+    // Remember who opened the MR so they can abort or retry its review. Not the top-level `user`, which is whoever triggered this event.
+    const authorId = object_attributes?.author_id;
+    if (typeof authorId === 'number' && thread.metadata?.mrAuthorId == null) {
+      await threadsDal.mergeMetadata(thread.id, { mrAuthorId: authorId });
     }
 
     const query = {

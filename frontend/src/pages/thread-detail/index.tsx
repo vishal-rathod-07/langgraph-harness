@@ -34,6 +34,7 @@ import {
 } from '@tabler/icons-react';
 
 import type { ContextUsageBreakdown, RunEvent, Thread, Todo } from '@/types';
+import { Role } from '@/types';
 
 import Icon from '@/components/icon';
 import RunList from '@/components/run/run-list';
@@ -46,6 +47,7 @@ import TodoList from './components/todo-list';
 import { api, ws } from '@/api';
 import { config } from '@/config';
 import { Context } from '@/contexts';
+import { useAuth } from '@/hooks/useAuth';
 import { useConfirmAction } from '@/hooks/useConfirmAction';
 import { useRunStream } from '@/hooks/useRunStream';
 import { useStickToBottom } from '@/hooks/useStickToBottom';
@@ -91,14 +93,11 @@ const ThreadDetailPage = () => {
     useMediaQuery(`(max-width: ${theme.breakpoints.md})`) ?? false;
   const { handleError } = use(Context);
   const { startTour, registerPageDrawer } = useTour();
-  const [thread, setThread] = useState<
-    | (Omit<
-        Thread,
-        // missing from API
-        'run_count' | 'failure_count'
-      > & { canMutate: boolean })
-    | null
-  >(null);
+  const [thread, setThread] = useState<Omit<
+    Thread,
+    // missing from API
+    'run_count' | 'failure_count'
+  > | null>(null);
   const [loadedThreadId, setLoadedThreadId] = useState(threadId);
   const {
     runs,
@@ -124,7 +123,11 @@ const ThreadDetailPage = () => {
     Record<string, number>
   >({});
   const abortRef = useRef<AbortController | null>(null);
-  const canMutate = !!thread?.canMutate;
+  const { user } = useAuth();
+  // Only hides the buttons; the server still checks every abort and retry.
+  const canMutate =
+    user?.role === Role.Admin ||
+    (user?.gitlabId != null && thread?.metadata?.mrAuthorId === user.gitlabId);
   const retryRun = useConfirmAction({
     title: 'Retry run',
     message: 'Retry this run from this checkpoint?',
