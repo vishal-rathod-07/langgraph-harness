@@ -2,6 +2,22 @@
 
 All notable changes to langgraph-harness are documented here.
 
+## [0.4.3] - 2026-10-07
+
+### Fixes
+
+- **Chat's GitLab tools always reported that no GitLab account was linked** — turning on GitLab tools in a chat failed with "GitLab tools enabled but no linked GitLab token", even for users signed in with GitLab. Chat now retrieves the linked GitLab token correctly, so the tools work again.
+
+---
+
+## [0.4.2] - 2026-10-03
+
+### Fixes
+
+- **The backend refused to start unless both Gemini and Groq API keys were set** — when Gemini and Groq support was added, their keys were left out of the optional list in the startup check, so it demanded them even when you only use one LLM provider. They're now optional, like the other provider keys.
+
+---
+
 ## [0.4.1] - 2026-09-29
 
 ### Fixes
